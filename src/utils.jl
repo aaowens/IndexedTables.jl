@@ -14,12 +14,6 @@ type2missingtype(T::Type{<:DataValue}, ::Type{DataValue}) = T
 missingtype2type(T) = Base.nonmissingtype(T)
 missingtype2type(::Type{DataValue{T}}) where {T} = T
 
-# doesn't get used?
-# unwrap(x) = x
-# unwrap(x::DataValue) = get(x)
-# ismissingtype(T, ::Type{Missing}) = Missing <: T 
-# ismissingtype(T, ::Type{DataValue}) = T <: DataValue
-
 # e.g. Vector{Int} -> Vector{Union{Int, Missing}}
 vec_missing(col, ::Type{Missing}) = convert(Vector{Union{Missing, eltype(col)}}, col)
 
