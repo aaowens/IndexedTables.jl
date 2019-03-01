@@ -44,4 +44,12 @@
         t_anti = table((x=2:2:10, y=y[2:2:10]), pkey=:x)
         @test isequal(join(t, t2; how=:anti), t_anti)
     end
+    @testset "stringarray" begin 
+        a = table((sa=StringArray(["a","b","c"]), id=1:3))
+        b = table((x=1:3, id=1:2:5))
+        t_outer = table((id=[1,2,3,5], sa=["a","b","c",missing], x=[1,missing,2,3]), pkey=:id)
+        t_outer2 = table((id=[1,2,3,5], sa=["a","b","c",NA], x=[1,NA,2,3]), pkey=:id)
+        @test isequal(join(a, b, how=:outer, lkey=:id, rkey=:id), t_outer)
+        # @test isequal(join(a, b, how=:outer, lkey=:id, rkey=:id, missingtype=DataValue), t_outer2)
+    end
 end

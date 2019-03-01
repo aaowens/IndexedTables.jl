@@ -2,21 +2,34 @@
 missing_instance(::Type{Missing}) = missing 
 missing_instance(::Type{DataValue}) = DataValue()
 
+_ismissing(x) = ismissing(x)
+_ismissing(x::DataValue) = isna(x)
+
+# convert type to a type that supports missing values, e.g. Int -> Union{Int, Missing}
 type2missingtype(T, ::Type{Missing}) = Union{T, Missing} 
 type2missingtype(T, ::Type{DataValue}) = DataValue{T}
 type2missingtype(T::Type{<:DataValue}, ::Type{DataValue}) = T
 
+# convert missing type to nonmissing type, e.g. Union{Int, Missing} -> Int
 missingtype2type(T) = Base.nonmissingtype(T)
 missingtype2type(::Type{DataValue{T}}) where {T} = T
 
-unwrap(x) = x
-unwrap(x::DataValue) = get(x)
+# doesn't get used?
+# unwrap(x) = x
+# unwrap(x::DataValue) = get(x)
+# ismissingtype(T, ::Type{Missing}) = Missing <: T 
+# ismissingtype(T, ::Type{DataValue}) = T <: DataValue
 
-ismissingtype(T, ::Type{Missing}) = Missing <: T 
-ismissingtype(T, ::Type{DataValue}) = T <: DataValue
+# e.g. Vector{Int} -> Vector{Union{Int, Missing}}
+vec_missing(col, ::Type{Missing}) = convert(Vector{Union{Missing, eltype(col)}}, col)
 
-_ismissing(x) = ismissing(x)
-_ismissing(x::DataValue) = isna(x)
+function vec_missing(col::StringVector{T}, ::Type{Missing}) where {T}
+    convert(StringVector{Union{Missing, T}}, col)
+end
+
+vec_missing(col, ::Type{DataValue}) = DataValueArray(col, falses(length(col)))
+vec_missing(col::StringArray, ::Type{DataValue}) = (@info "shit"; vec_missing([s for s in deepcopy(col)], DataValue))
+vec_missing(col::DataValueArray, ::Type{DataValue}) = col
 
 #-----------------------------------------------------------------------# other
 

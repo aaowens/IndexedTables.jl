@@ -173,12 +173,6 @@ end
 nullrow(t::Type{<:Tuple}, ::Type{Missing}) = Tuple(map(x->missing, fieldtypes(t)))
 nullrow(t::Type{<:NamedTuple}, ::Type{Missing}) = t(Tuple(map(x->missing, fieldtypes(t))))
 nullrow(t, ::Type{Missing}) = missing
-function outvec(col, idxs, ::Type{Missing})
-    v = convert(Vector{Union{Missing, eltype(col)}}, col)
-    v[idxs] .= missing
-    v
-end
-
 
 # DataValue
 nullrow(::Type{T}, ::Type{DataValue}) where {T <: Tuple} = Tuple(fieldtype(T, i)() for i = 1:fieldcount(T))
@@ -187,15 +181,17 @@ function nullrow(::Type{NamedTuple{names, T}}, ::Type{DataValue}) where {names, 
 end
 nullrow(t, ::Type{DataValue}) = DataValue()
 nullrow(t::DataValue, ::Type{DataValue}) = t()
-function outvec(col, idxs, ::Type{DataValue})
-    nulls = zeros(Bool, length(col))
-    nulls[idxs] .= true
-    if col isa DataValueArray
-        col.isna[idxs] .= true
-    else
-        DataValueArray(col, nulls)
+
+# a joined column with missing values at `idxs`
+function outvec(col, idxs, ::Type{T}) where {T}
+    v = vec_missing(col, T)
+    for i in idxs
+        v[i] = missing_instance(T)
     end
+    v
 end
+
+
 
 function init_join_output(typ, grp, f, ldata, rdata, left, keepkeys, lkey, rkey, init_group, accumulate, missingtype)
     lnull = nothing
