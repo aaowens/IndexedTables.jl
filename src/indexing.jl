@@ -11,6 +11,24 @@ function _getindex_scalar(t, idxs)
     t.data[first(i)]
 end
 
+Base.haskey(t::NDSparse, idxs) = (flush!(t); _haskey(t, idxs))
+
+_haskey(t::NDSparse{T,D}, idxs::D) where {T,D<:Tuple} = _haskey_scalar(t, idxs)
+
+function _haskey_scalar(t, idxs)
+    i = searchsorted(t.index, convertkey(t, idxs))
+    return length(i) == 1
+end
+
+Base.get(t::NDSparse, idxs, default) = (flush!(t); _get(t, idxs, default))
+
+_get(t::NDSparse{T,D}, idxs::D, default) where {T,D<:Tuple} = _get_scalar(t, idxs, default)
+
+function _get_scalar(t, idxs, default)
+    i = searchsorted(t.index, convertkey(t, idxs))
+    return length(i) == 1 ? t.data[first(i)] : default
+end
+
 # branch instead of diagonal dispatch to avoid ambiguities
 _in(x, y) = isa(x,typeof(y)) ? isequal(x, y) : in(x, y)
 _in(x, ::Colon) = true
@@ -33,9 +51,9 @@ const _fwd = Base.Order.ForwardOrdering()
 
 range_estimate(col, idx, lo, hi) = 1:length(col)
 range_estimate(col::AbstractVector{T}, idx::T, lo, hi) where {T} =
-    searchsortedfirst(col, idx, lo, hi, _fwd):searchsortedlast(col, idx, lo, hi, _fwd)
+searchsortedfirst(col, idx, lo, hi, _fwd):searchsortedlast(col, idx, lo, hi, _fwd)
 range_estimate(col, idx::AbstractArray, lo, hi) =
-    searchsortedfirst(col, first(idx), lo, hi, _fwd):searchsortedlast(col, last(idx), lo, hi, _fwd)
+searchsortedfirst(col, first(idx), lo, hi, _fwd):searchsortedlast(col, last(idx), lo, hi, _fwd)
 
 isconstrange(col, idx) = false
 isconstrange(col::AbstractVector{T}, idx::T) where {T} = true
