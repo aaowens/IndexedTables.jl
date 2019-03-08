@@ -433,14 +433,21 @@ end
 
     s = table(cs)
     @test s[[2,1]] == table(rows(s)[[2,1]])
-	
+
     ## Also test getindex, haskey, and get for NDSparse
     ts = ndsparse(t)
     @test ts[1.2] == (y = 3,)
+    @test_throws KeyError ts[1.3]
     @test haskey(ts, (1.2,)) == true
     @test haskey(ts, (1.3,)) == false
     @test get(ts, (1.2,), missing) == (y = 3,)
     @test get(ts, (1.3,), missing) === missing
+    @test get(ts, (1.2,)) do
+        missing
+    end == (y = 3,)
+    @test get(ts, (1.3,)) do
+        missing
+    end === missing
 end
 
 @testset "view & range" begin
@@ -654,7 +661,7 @@ end
         table((a=[1, 1, 2, 2], b=[1, 2, 1, 2], c=[1, 2, 3, 4], d=[2, 3, missing, missing]))
     )
     @test isequal(
-        join(l, r, how=:outer), 
+        join(l, r, how=:outer),
         table((a=[0, 1, 1, 2, 2, 3], b=[1, 1, 2, 1, 2, 2], c=[missing, 1, 2, 3, 4, missing], d=[1, 2, 3, missing, missing, 4]))
     )
     a = table([1],[2], names=[:x,:y])
@@ -700,7 +707,7 @@ end
 
     # null instead of missing row
     @test isequal(
-        leftjoin(+, t1, t2, lselect=2, rselect=2), 
+        leftjoin(+, t1, t2, lselect=2, rselect=2),
         table([1,2,3,4], [missing, missing, 13, 15])
     )
 

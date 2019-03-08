@@ -1,32 +1,32 @@
 # getindex
 
+function Base.get(f::Function, t::NDSparse{T,D}, idxs::D) where {T,D<:Tuple}
+    flush!(t)
+    i = searchsorted(t.index, convertkey(t, idxs))
+    return length(i) == 1 ? t.data[first(i)] : f()
+end
+
+function Base.get(t::NDSparse{T,D}, idxs::D, default) where {T,D<:Tuple}
+    get(t, idxs) do
+        default
+    end
+end
+
 getindex(t::NDSparse, idxs...) = (flush!(t); _getindex(t, idxs))
 
 _getindex(t::NDSparse{T,D}, idxs::D) where {T,D<:Tuple} = _getindex_scalar(t, idxs)
 _getindex(t::NDSparse, idxs::Tuple{Vararg{Real}}) = _getindex_scalar(t, idxs)
 
 function _getindex_scalar(t, idxs)
-    i = searchsorted(t.index, convertkey(t, idxs))
-    length(i) != 1 && throw(KeyError(idxs))
-    t.data[first(i)]
+    get(t, idxs) do
+        throw(KeyError(idxs))
+    end
 end
 
-Base.haskey(t::NDSparse, idxs) = (flush!(t); _haskey(t, idxs))
-
-_haskey(t::NDSparse{T,D}, idxs::D) where {T,D<:Tuple} = _haskey_scalar(t, idxs)
-
-function _haskey_scalar(t, idxs)
+function Base.haskey(t::NDSparse{T, D}, idxs::D) where {T,D<:Tuple}
+    flush!(t)
     i = searchsorted(t.index, convertkey(t, idxs))
     return length(i) == 1
-end
-
-Base.get(t::NDSparse, idxs, default) = (flush!(t); _get(t, idxs, default))
-
-_get(t::NDSparse{T,D}, idxs::D, default) where {T,D<:Tuple} = _get_scalar(t, idxs, default)
-
-function _get_scalar(t, idxs, default)
-    i = searchsorted(t.index, convertkey(t, idxs))
-    return length(i) == 1 ? t.data[first(i)] : default
 end
 
 # branch instead of diagonal dispatch to avoid ambiguities
